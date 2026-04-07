@@ -929,10 +929,11 @@ RULES:
         "What leadership experiences have shaped you?",
       ];
 
-      const USE_LOCAL_PROXY =
+      /** Same-origin proxy avoids browser CORS blocks on api.openai.com (Vercel + vercel dev). */
+      const USE_SAME_ORIGIN_PROXY =
         typeof location !== "undefined" &&
-        (location.hostname === "localhost" || location.hostname === "127.0.0.1");
-      const OPENAI_URL = USE_LOCAL_PROXY
+        (location.protocol === "http:" || location.protocol === "https:");
+      const OPENAI_URL = USE_SAME_ORIGIN_PROXY
         ? `${location.origin}/proxy/v1/chat/completions`
         : "https://api.openai.com/v1/chat/completions";
       const MODEL = "gpt-4o";
