@@ -1,6 +1,6 @@
 /**
- * Proxies OpenAI chat completions (streaming) so the browser can call same-origin.
- * Forwards the user's Bearer token from the client; no server-side API key required.
+ * Proxies OpenAI chat completions (streaming) same-origin for the browser.
+ * API key is read from OPENAI_API_KEY (Vercel env / .env.local for vercel dev).
  */
 
 module.exports = async (req, res) => {
@@ -9,10 +9,12 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith("Bearer ")) {
-    res.status(401).json({
-      error: { message: "Missing or invalid Authorization header" },
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || !apiKey.trim()) {
+    res.status(503).json({
+      error: {
+        message: "Server is not configured with OPENAI_API_KEY",
+      },
     });
     return;
   }
@@ -23,7 +25,7 @@ module.exports = async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: auth,
+        Authorization: `Bearer ${apiKey.trim()}`,
       },
       body: JSON.stringify(req.body),
     });
