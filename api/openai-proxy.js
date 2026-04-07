@@ -1,33 +1,32 @@
 /**
  * Proxies OpenAI chat completions (streaming) same-origin for the browser.
- * OPENAI_API_KEY: Vercel project env in production; local `.env` is loaded below when unset.
+ * OPENAI_API_KEY: set in Vercel project env (production), or in repo-root `.env` for local `vercel dev`.
  */
-
 const fs = require("fs");
 const path = require("path");
 
-(function mergeProjectDotenv() {
-  const dotenvPath = path.join(__dirname, "..", ".env");
-  let raw;
+(function loadEnvFileIfNeeded() {
+  if (process.env.OPENAI_API_KEY) return;
   try {
-    raw = fs.readFileSync(dotenvPath, "utf8");
-  } catch {
-    return;
-  }
-  for (const line of raw.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let val = trimmed.slice(eq + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
+    const envPath = path.join(__dirname, "..", ".env");
+    const text = fs.readFileSync(envPath, "utf8");
+    for (const line of text.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq === -1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let val = trimmed.slice(eq + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      if (key && process.env[key] === undefined) process.env[key] = val;
     }
-    if (key && process.env[key] === undefined) process.env[key] = val;
+  } catch (_) {
+    /* no or unreadable .env */
   }
 })();
 
