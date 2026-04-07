@@ -1,0 +1,7 @@
+{
+  "name": "jack-ai",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
