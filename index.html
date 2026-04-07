@@ -585,104 +585,6 @@
         box-shadow: 0 1px 0 var(--border);
       }
 
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(12, 8, 24, 0.55);
-        z-index: 100;
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-      }
-
-      [data-theme="light"] .modal-backdrop {
-        background: rgba(26, 20, 40, 0.35);
-      }
-
-      .modal {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: min(440px, calc(100% - 2rem));
-        padding: 1.65rem;
-        background: var(--bg-elevated);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-soft);
-        z-index: 101;
-      }
-
-      .modal__title {
-        margin: 0 0 0.65rem;
-        font-size: 1.35rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-      }
-
-      .modal__text {
-        margin: 0 0 1.1rem;
-        font-size: 0.95rem;
-        color: var(--text-muted);
-        line-height: 1.55;
-      }
-
-      .modal__text a {
-        color: var(--accent-strong);
-        font-weight: 600;
-        text-decoration: underline;
-        text-underline-offset: 3px;
-      }
-
-      .modal__text a:hover {
-        color: var(--accent-hover);
-      }
-
-      .modal__label {
-        display: block;
-        font-size: 0.88rem;
-        font-weight: 600;
-        margin-bottom: 0.4rem;
-        color: var(--text);
-      }
-
-      .modal__input {
-        width: 100%;
-        padding: 0.72rem 0.85rem;
-        font-family: inherit;
-        font-size: 1rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        background: var(--input-bg);
-        color: var(--text);
-        margin-bottom: 0.75rem;
-        min-height: 48px;
-        transition: border-color var(--transition), box-shadow var(--transition);
-      }
-
-      .modal__input:focus {
-        outline: none;
-        border-color: var(--accent-strong);
-        box-shadow: var(--focus-ring);
-      }
-
-      .modal__error {
-        margin: -0.45rem 0 0.75rem;
-        font-size: 0.88rem;
-        color: var(--danger);
-        font-weight: 500;
-      }
-
-      .modal__actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.55rem;
-        margin-top: 0.35rem;
-      }
-
-      .hidden {
-        display: none !important;
-      }
-
       .sr-only {
         position: absolute;
         width: 1px;
@@ -765,7 +667,6 @@
             <span class="theme-icon theme-icon--dark" aria-hidden="true">☾</span>
           </button>
           <button type="button" class="btn btn--ghost" id="btnClearChat" title="Start a fresh conversation">New chat</button>
-          <button type="button" class="btn btn--secondary" id="btnApiKey" title="Add or change your OpenAI API key">API key</button>
         </div>
       </header>
 
@@ -790,34 +691,10 @@
           </button>
         </div>
         <p class="composer__hint">
-          <span class="composer__hint-main">Your OpenAI key stays in this browser only — tap <strong>API key</strong> to save it. Chat talks to OpenAI directly.</span>
+          <span class="composer__hint-main">Hosted on Vercel — chat uses the server’s OpenAI key (no key in the browser).</span>
           <span class="composer__hint-kbd"><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
         </p>
       </footer>
-    </div>
-
-    <div class="modal-backdrop hidden" id="apiKeyBackdrop" role="presentation"></div>
-    <div class="modal hidden" id="apiKeyModal" role="dialog" aria-modal="true" aria-labelledby="apiKeyTitle">
-      <h2 id="apiKeyTitle" class="modal__title">Connect OpenAI</h2>
-      <p class="modal__text">
-        Paste your API key from
-        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI’s key page</a>.
-        It’s stored only in this browser (not on any server).
-      </p>
-      <label class="modal__label" for="apiKeyInput">API key</label>
-      <input
-        id="apiKeyInput"
-        type="password"
-        class="modal__input"
-        placeholder="sk-..."
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <p class="modal__error hidden" id="apiKeyError" role="alert"></p>
-      <div class="modal__actions">
-        <button type="button" class="btn btn--ghost" id="btnApiKeyCancel">Cancel</button>
-        <button type="button" class="btn btn--primary" id="btnApiKeySave">Save</button>
-      </div>
     </div>
 
     <script type="module">
@@ -927,38 +804,26 @@ RULES:
         "What leadership experiences have shaped you?",
       ];
 
-      const STORAGE_KEY = "jack-ai-openai-key";
-      const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+      /** Same-origin proxy on Vercel / `vercel dev` — CORS-safe, key stays on the server. */
+      const USE_PROXY =
+        typeof location !== "undefined" &&
+        (location.protocol === "http:" || location.protocol === "https:");
+      const OPENAI_URL = USE_PROXY
+        ? `${location.origin}/proxy/v1/chat/completions`
+        : "https://api.openai.com/v1/chat/completions";
       const MODEL = "gpt-4o";
 
       const chatLog = document.getElementById("chatLog");
       const messageInput = document.getElementById("messageInput");
       const btnSend = document.getElementById("btnSend");
       const btnClearChat = document.getElementById("btnClearChat");
-      const btnApiKey = document.getElementById("btnApiKey");
       const btnTheme = document.getElementById("btnTheme");
       const themeRoot = document.documentElement;
-
-      const apiKeyBackdrop = document.getElementById("apiKeyBackdrop");
-      const apiKeyModal = document.getElementById("apiKeyModal");
-      const apiKeyInput = document.getElementById("apiKeyInput");
-      const apiKeyError = document.getElementById("apiKeyError");
-      const btnApiKeySave = document.getElementById("btnApiKeySave");
-      const btnApiKeyCancel = document.getElementById("btnApiKeyCancel");
 
       /** @type {{ role: string, content: string }[]} */
       let conversationMessages = [];
 
       let isStreaming = false;
-
-      function getApiKey() {
-        return localStorage.getItem(STORAGE_KEY)?.trim() || "";
-      }
-
-      function setApiKey(key) {
-        if (key) localStorage.setItem(STORAGE_KEY, key);
-        else localStorage.removeItem(STORAGE_KEY);
-      }
 
       function showWelcomeIfEmpty() {
         if (conversationMessages.length > 0) return;
@@ -973,7 +838,7 @@ RULES:
         const lead = document.createElement("p");
         lead.className = "chat__welcome-lead";
         lead.innerHTML =
-          'Chat in Jack’s voice—straight answers, no fluff. Add your OpenAI key once (<strong>API key</strong>), then type or use a starter below.';
+          "Chat in Jack’s voice—straight answers, no fluff. Type a message or use a starter below.";
 
         const chipsWrap = document.createElement("div");
         chipsWrap.className = "welcome-chips";
@@ -993,21 +858,6 @@ RULES:
         el.appendChild(lead);
         el.appendChild(chipsWrap);
         chatLog.appendChild(el);
-      }
-
-      function openApiKeyModal(prefillError = "") {
-        apiKeyInput.value = getApiKey();
-        apiKeyError.textContent = prefillError;
-        apiKeyError.classList.toggle("hidden", !prefillError);
-        apiKeyModal.classList.remove("hidden");
-        apiKeyBackdrop.classList.remove("hidden");
-        apiKeyInput.focus();
-      }
-
-      function closeApiKeyModal() {
-        apiKeyModal.classList.add("hidden");
-        apiKeyBackdrop.classList.add("hidden");
-        apiKeyError.classList.add("hidden");
       }
 
       function buildPayloadMessages() {
@@ -1061,12 +911,11 @@ RULES:
       }
 
       function updateSendState() {
-        const key = getApiKey();
         const hasText = messageInput.value.trim().length > 0;
-        btnSend.disabled = !key || !hasText || isStreaming;
+        btnSend.disabled = !hasText || isStreaming;
       }
 
-      async function streamChatCompletion(apiKey, onDelta, onDone, onError) {
+      async function streamChatCompletion(onDelta, onDone, onError) {
         const body = {
           model: MODEL,
           messages: buildPayloadMessages(),
@@ -1080,7 +929,6 @@ RULES:
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify(body),
           });
@@ -1146,12 +994,6 @@ RULES:
       }
 
       async function handleSend() {
-        const apiKey = getApiKey();
-        if (!apiKey) {
-          openApiKeyModal("Save your API key to chat.");
-          return;
-        }
-
         const text = messageInput.value.trim();
         if (!text || isStreaming) return;
 
@@ -1171,7 +1013,6 @@ RULES:
         let fullAssistant = "";
 
         await streamChatCompletion(
-          apiKey,
           (delta) => {
             fullAssistant += delta;
             bubble.textContent = fullAssistant;
@@ -1182,7 +1023,7 @@ RULES:
             if (fullAssistant.trim()) {
               conversationMessages.push({ role: "assistant", content: fullAssistant });
             } else {
-              bubble.textContent = "(No response. Try again or check your key.)";
+              bubble.textContent = "(No response. Try again.)";
             }
             isStreaming = false;
             updateSendState();
@@ -1248,40 +1089,11 @@ RULES:
 
       btnClearChat.addEventListener("click", clearChat);
 
-      btnApiKey.addEventListener("click", () => openApiKeyModal(""));
-
-      btnApiKeySave.addEventListener("click", () => {
-        const key = apiKeyInput.value.trim();
-        if (!key.startsWith("sk-")) {
-          apiKeyError.textContent = "Keys usually start with sk-";
-          apiKeyError.classList.remove("hidden");
-          return;
-        }
-        setApiKey(key);
-        closeApiKeyModal();
-        updateSendState();
-      });
-
-      btnApiKeyCancel.addEventListener("click", closeApiKeyModal);
-      apiKeyBackdrop.addEventListener("click", closeApiKeyModal);
-
-      document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape") return;
-        if (!apiKeyModal.classList.contains("hidden")) {
-          closeApiKeyModal();
-          e.preventDefault();
-        }
-      });
-
       btnTheme.addEventListener("click", toggleTheme);
 
       initTheme();
       showWelcomeIfEmpty();
       updateSendState();
-
-      if (!getApiKey()) {
-        openApiKeyModal("");
-      }
     </script>
   </body>
 </html>

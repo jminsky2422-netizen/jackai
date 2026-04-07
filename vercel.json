@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/proxy/v1/chat/completions",
+      "destination": "/api/openai-proxy"
+    }
+  ]
+}
