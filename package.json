@@ -2,6 +2,7 @@
   "name": "jack-ai",
   "private": true,
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "dev:local": "node dev-server.mjs"
   }
 }

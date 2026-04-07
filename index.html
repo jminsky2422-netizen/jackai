@@ -691,7 +691,7 @@
           </button>
         </div>
         <p class="composer__hint">
-          <span class="composer__hint-main">Hosted on Vercel — chat uses the server’s OpenAI key (no key in the browser).</span>
+          <span class="composer__hint-main">OpenAI key stays on the server (Vercel env or <code style="font-size:0.88em">.env</code> locally). Run <code style="font-size:0.88em">npm run dev</code> or <code style="font-size:0.88em">npm run dev:local</code>.</span>
           <span class="composer__hint-kbd"><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
         </p>
       </footer>
@@ -804,11 +804,16 @@ RULES:
         "What leadership experiences have shaped you?",
       ];
 
-      /** Same-origin proxy on Vercel / `vercel dev` — CORS-safe, key stays on the server. */
-      const USE_PROXY =
+      /**
+       * Same-origin /proxy/... works on:
+       * - Vercel (serverless + vercel.json rewrite)
+       * - `vercel dev` on localhost
+       * - `npm run dev:local` (dev-server.mjs)
+       */
+      const USE_SAME_ORIGIN_PROXY =
         typeof location !== "undefined" &&
         (location.protocol === "http:" || location.protocol === "https:");
-      const OPENAI_URL = USE_PROXY
+      const OPENAI_URL = USE_SAME_ORIGIN_PROXY
         ? `${location.origin}/proxy/v1/chat/completions`
         : "https://api.openai.com/v1/chat/completions";
       const MODEL = "gpt-4o";
