@@ -804,13 +804,14 @@ RULES:
         "What leadership experiences have shaped you?",
       ];
 
-      /** Same-origin proxy avoids browser CORS blocks on api.openai.com (Vercel + vercel dev). */
-      const USE_SAME_ORIGIN_PROXY =
+      /**
+       * Always call the same-origin proxy only. Never call api.openai.com from the browser — no API key is sent from the client, and CORS would block it anyway.
+       * Your `.env` key is used only inside `api/openai-proxy.js` when you run `npm run dev` or deploy to Vercel.
+       */
+      const CAN_USE_PROXY =
         typeof location !== "undefined" &&
         (location.protocol === "http:" || location.protocol === "https:");
-      const OPENAI_URL = USE_SAME_ORIGIN_PROXY
-        ? `${location.origin}/proxy/v1/chat/completions`
-        : "https://api.openai.com/v1/chat/completions";
+      const OPENAI_URL = CAN_USE_PROXY ? `${location.origin}/proxy/v1/chat/completions` : "";
       const MODEL = "gpt-4o";
 
       const chatLog = document.getElementById("chatLog");
@@ -916,6 +917,13 @@ RULES:
       }
 
       async function streamChatCompletion(onDelta, onDone, onError) {
+        if (!OPENAI_URL) {
+          onError(
+            "Open Jack AI with the dev server so your .env key works: in the Jack AI folder run `npm run dev`, then use the http://localhost URL it shows. (Opening index.html as a file or in a plain static server will not load the API route.)"
+          );
+          return;
+        }
+
         const body = {
           model: MODEL,
           messages: buildPayloadMessages(),

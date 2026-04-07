@@ -6,11 +6,13 @@ const fs = require("fs");
 const path = require("path");
 
 (function loadEnvFileIfNeeded() {
-  if (process.env.OPENAI_API_KEY) return;
+  const existing = process.env.OPENAI_API_KEY;
+  if (existing != null && String(existing).trim() !== "") return;
+
   try {
     const envPath = path.join(__dirname, "..", ".env");
-    const text = fs.readFileSync(envPath, "utf8");
-    for (const line of text.split("\n")) {
+    const text = fs.readFileSync(envPath, "utf8").replace(/^\uFEFF/, "");
+    for (const line of text.split(/\r?\n/)) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith("#")) continue;
       const eq = trimmed.indexOf("=");
